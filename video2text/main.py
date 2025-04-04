@@ -34,9 +34,11 @@ def transcribe_audio(audio_file):
 
     try:
         audio = AudioSegment.from_wav(audio_file)
-        chunk_length = 30 * 1000  # 30 saniye
+        chunk_length = 30 * 1000  # 30 seconds
 
-        for i in range(0, len(audio), chunk_length):
+        # Add progress bar here
+        from tqdm import tqdm
+        for i in tqdm(range(0, len(audio), chunk_length), desc="Transcribing", unit="chunk"):
             chunk = audio[i:i + chunk_length]
             chunk_name = f"temp_chunk_{i}.wav"
             chunk.export(chunk_name, format="wav")
@@ -46,17 +48,16 @@ def transcribe_audio(audio_file):
                 try:
                     text += recognizer.recognize_google(audio_data, language='tr-TR') + " "
                 except sr.UnknownValueError:
-                    print(f"Parça {i // chunk_length} anlaşılamadı")
+                    print(f"\nChunk {i//chunk_length} could not be understood")  # \n for new line
                 except sr.RequestError as e:
-                    print(f"API hatası: {e}")
+                    print(f"\nAPI error: {e}")
 
             os.remove(chunk_name)
 
     except Exception as e:
-        print(f"İşlem hatası: {e}")
+        print(f"\nProcessing error: {e}")
 
     return text
-
 
 def save_to_text(content, filename):
     try:
